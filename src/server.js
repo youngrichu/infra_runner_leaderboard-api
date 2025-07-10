@@ -44,6 +44,11 @@ fastify.decorate('io', {
   }
 });
 
+// Add root route
+fastify.get('/', async (request, reply) => {
+  return { message: 'Leaderboard API is running!', docs: '/docs' };
+});
+
 // Register routes
 fastify.register(require('./routes/leaderboard'));
 fastify.register(require('./routes/health'));
