@@ -1,0 +1,31 @@
+{
+  "name": "leaderboard-api",
+  "version": "1.0.0",
+  "description": "Realtime leaderboard API for Infrastructure Runner game",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest"
+  },
+  "keywords": ["leaderboard", "api", "realtime", "fastify"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fastify": "^4.24.3",
+    "@fastify/cors": "^8.4.0",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/rate-limit": "^8.0.3",
+    "@fastify/swagger": "^8.12.0",
+    "@fastify/swagger-ui": "^1.10.0",
+    "@supabase/supabase-js": "^2.38.5",
+    "socket.io": "^4.7.4",
+    "joi": "^17.11.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}
