@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Realtime leaderboard API for Infrastructure Runner game",
   "main": "src/server.js",
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
