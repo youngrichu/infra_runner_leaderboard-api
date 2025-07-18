@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "packageManager": "pnpm@10.13.1",
   "scripts": {
+    "build": "echo 'Build completed'",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest"
