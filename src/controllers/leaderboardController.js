@@ -81,13 +81,6 @@ class LeaderboardController {
     try {
       const { email } = request.params;
       
-      if (!email) {
-        return reply.status(400).send({
-          success: false,
-          error: 'Email parameter is required'
-        });
-      }
-
       const playerBestScore = await leaderboardModel.getPlayerBestScore(email);
       
       reply.send({
@@ -115,13 +108,6 @@ class LeaderboardController {
           success: false,
           error: 'Validation error',
           details: error.details.map(detail => detail.message)
-        });
-      }
-
-      if (!organizationName) {
-        return reply.status(400).send({
-          success: false,
-          error: 'Organization name parameter is required'
         });
       }
 
