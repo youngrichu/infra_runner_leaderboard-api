@@ -5,15 +5,32 @@ require('dotenv').config();
 // Setup Socket.IO variable to be accessible in routes
 let io;
 
+// Define allowed origins for CORS
+const isProduction = process.env.NODE_ENV === 'production';
+
+let allowedOrigins;
+if (process.env.FRONTEND_URL) {
+  allowedOrigins = process.env.FRONTEND_URL.split(',');
+} else {
+  if (isProduction) {
+    console.error('ERROR: FRONTEND_URL environment variable must be set in production');
+    process.exit(1);
+  }
+  console.warn('WARNING: FRONTEND_URL is not set. Defaulting to standard development origins.');
+  allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'https://infra-runner.onrender.com', 'https://infra-runner-game.vercel.app'];
+}
+
 // Register plugins
 fastify.register(require('@fastify/cors'), {
-  origin: true
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'OPTIONS'],
 });
 
 fastify.register(require('@fastify/helmet'));
 
 fastify.register(require('@fastify/rate-limit'), {
-  max: 100,
+  global: true,
+  max: 100, // global rate limit
   timeWindow: '1 minute'
 });
 
@@ -62,7 +79,7 @@ const start = async () => {
     // Setup Socket.IO after server starts
     io = new Server(fastify.server, {
       cors: {
-        origin: "*",
+        origin: allowedOrigins,
         methods: ["GET", "POST"]
       }
     });
@@ -83,4 +100,7 @@ const start = async () => {
   }
 };
 
-start();
+start().catch(err => {
+  console.error("Failed to start:", err);
+  process.exit(1);
+});

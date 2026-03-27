@@ -1,133 +1,120 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const { neon } = require('@neondatabase/serverless');
 
 class LeaderboardModel {
-  
-  // Submit a new score
-  async submitScore(playerData) {
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .insert([{
-        player_name: playerData.playerName,
-        email: playerData.email,
-        organization_name: playerData.organizationName,
-        score: playerData.score,
-        game_duration: playerData.gameDuration,
-        blueprints_collected: playerData.blueprintsCollected,
-        water_drops_collected: playerData.waterDropsCollected,
-        energy_cells_collected: playerData.energyCellsCollected,
-        played_at: new Date().toISOString()
-      }])
-      .select();
-
-    if (error) {
-      throw new Error(`Failed to submit score: ${error.message}`);
+  constructor() {
+    // Initialize Neon client
+    if (!process.env.DATABASE_URL) {
+      console.warn('DATABASE_URL is not set. Leaderboard operations will fail.');
+    } else {
+      this.sql = neon(process.env.DATABASE_URL);
     }
-
-    return data[0];
   }
 
-  // Get top scores (overall leaderboard)
+  async submitScore(data) {
+    if (!this.sql) throw new Error('Database connection not initialized');
+
+    const result = await this.sql`
+      INSERT INTO leaderboard (
+        player_name,
+        email,
+        organization_name,
+        score,
+        game_duration,
+        blueprints_collected,
+        water_drops_collected,
+        energy_cells_collected
+      ) VALUES (
+        ${data.playerName},
+        ${data.email},
+        ${data.organizationName},
+        ${data.score},
+        ${data.gameDuration},
+        ${data.blueprintsCollected || 0},
+        ${data.waterDropsCollected || 0},
+        ${data.energyCellsCollected || 0}
+      )
+      RETURNING *
+    `;
+
+    return result[0];
+  }
+
   async getTopScores(limit = 10) {
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .select('*')
-      .order('score', { ascending: false })
-      .limit(limit);
+    if (!this.sql) throw new Error('Database connection not initialized');
 
-    if (error) {
-      throw new Error(`Failed to get top scores: ${error.message}`);
-    }
+    // Using the public_leaderboard view which excludes emails
+    const scores = await this.sql`
+      SELECT * FROM public_leaderboard
+      ORDER BY score DESC
+      LIMIT ${limit}
+    `;
 
-    return data;
+    return scores;
   }
 
-  // Get player's best score
   async getPlayerBestScore(email) {
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .select('*')
-      .eq('email', email)
-      .order('score', { ascending: false })
-      .limit(1);
+    if (!this.sql) throw new Error('Database connection not initialized');
 
-    if (error) {
-      throw new Error(`Failed to get player best score: ${error.message}`);
-    }
+    const result = await this.sql`
+      SELECT * FROM leaderboard
+      WHERE email = ${email}
+      ORDER BY score DESC
+      LIMIT 1
+    `;
 
-    return data[0] || null;
+    return result.length > 0 ? result[0] : null;
   }
 
-  // Get organization leaderboard
   async getOrganizationLeaderboard(organizationName, limit = 10) {
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .select('*')
-      .eq('organization_name', organizationName)
-      .order('score', { ascending: false })
-      .limit(limit);
+    if (!this.sql) throw new Error('Database connection not initialized');
 
-    if (error) {
-      throw new Error(`Failed to get organization leaderboard: ${error.message}`);
-    }
+    // Using the public_leaderboard view
+    const scores = await this.sql`
+      SELECT * FROM public_leaderboard
+      WHERE organization_name = ${organizationName}
+      ORDER BY score DESC
+      LIMIT ${limit}
+    `;
 
-    return data;
+    return scores;
   }
 
-  // Get recent scores
   async getRecentScores(limit = 10) {
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .select('*')
-      .order('played_at', { ascending: false })
-      .limit(limit);
+    if (!this.sql) throw new Error('Database connection not initialized');
 
-    if (error) {
-      throw new Error(`Failed to get recent scores: ${error.message}`);
-    }
+    // Using the public_leaderboard view
+    const scores = await this.sql`
+      SELECT * FROM public_leaderboard
+      ORDER BY played_at DESC
+      LIMIT ${limit}
+    `;
 
-    return data;
+    return scores;
   }
 
-  // Get statistics
   async getStatistics() {
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .select('score, game_duration, blueprints_collected, water_drops_collected, energy_cells_collected');
+    if (!this.sql) throw new Error('Database connection not initialized');
 
-    if (error) {
-      throw new Error(`Failed to get statistics: ${error.message}`);
-    }
+    const result = await this.sql`
+      SELECT
+        COUNT(*) as total_players,
+        COALESCE(AVG(score), 0) as average_score,
+        COALESCE(AVG(game_duration), 0) as average_game_duration,
+        COALESCE(SUM(blueprints_collected), 0) as total_blueprints,
+        COALESCE(SUM(water_drops_collected), 0) as total_water_drops,
+        COALESCE(SUM(energy_cells_collected), 0) as total_energy_cells
+      FROM leaderboard
+    `;
 
-    if (!data || data.length === 0) {
-      return {
-        totalPlayers: 0,
-        averageScore: 0,
-        averageGameDuration: 0,
-        totalBlueprints: 0,
-        totalWaterDrops: 0,
-        totalEnergyCells: 0
-      };
-    }
-
-    const totalPlayers = data.length;
-    const averageScore = data.reduce((sum, record) => sum + record.score, 0) / totalPlayers;
-    const averageGameDuration = data.reduce((sum, record) => sum + record.game_duration, 0) / totalPlayers;
-    const totalBlueprints = data.reduce((sum, record) => sum + record.blueprints_collected, 0);
-    const totalWaterDrops = data.reduce((sum, record) => sum + record.water_drops_collected, 0);
-    const totalEnergyCells = data.reduce((sum, record) => sum + record.energy_cells_collected, 0);
+    const stats = result[0];
 
     return {
-      totalPlayers,
-      averageScore: Math.round(averageScore),
-      averageGameDuration: Math.round(averageGameDuration),
-      totalBlueprints,
-      totalWaterDrops,
-      totalEnergyCells
+      totalPlayers: parseInt(stats.total_players || 0, 10),
+      averageScore: Math.round(parseFloat(stats.average_score || 0)),
+      averageGameDuration: Math.round(parseFloat(stats.average_game_duration || 0)),
+      totalBlueprints: parseInt(stats.total_blueprints || 0, 10),
+      totalWaterDrops: parseInt(stats.total_water_drops || 0, 10),
+      totalEnergyCells: parseInt(stats.total_energy_cells || 0, 10)
     };
   }
 }

@@ -1,4 +1,4 @@
--- Supabase Database Schema for Leaderboard
+-- Database Schema for Leaderboard (Neon PostgreSQL)
 
 CREATE TABLE leaderboard (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -34,24 +34,8 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_leaderboard_updated_at BEFORE UPDATE
 ON leaderboard FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Enable Row Level Security (RLS)
-ALTER TABLE leaderboard ENABLE ROW LEVEL SECURITY;
-
--- Create policy for authenticated users to read all records
-CREATE POLICY "Allow authenticated users to read leaderboard" ON leaderboard
-    FOR SELECT TO authenticated USING (true);
-
--- Create policy for authenticated users to insert their own records
-CREATE POLICY "Allow authenticated users to insert scores" ON leaderboard
-    FOR INSERT TO authenticated WITH CHECK (true);
-
--- Create policy for service role to have full access
-CREATE POLICY "Allow service role full access" ON leaderboard
-    FOR ALL TO service_role USING (true);
-
--- Create a view for public leaderboard (without email) with SECURITY INVOKER
-CREATE VIEW public_leaderboard 
-WITH (security_invoker=true) AS
+-- Create a view for public leaderboard (without email)
+CREATE OR REPLACE VIEW public_leaderboard AS
 SELECT 
     id,
     player_name,
@@ -62,9 +46,4 @@ SELECT
     water_drops_collected,
     energy_cells_collected,
     played_at
-FROM leaderboard
-ORDER BY score DESC;
-
--- Grant access to the view
-GRANT SELECT ON public_leaderboard TO authenticated;
-GRANT SELECT ON public_leaderboard TO anon;
+FROM leaderboard;

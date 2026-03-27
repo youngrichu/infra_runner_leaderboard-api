@@ -6,6 +6,12 @@ async function leaderboardRoutes(fastify, options) {
   
   // Submit a new score
   fastify.post('/api/leaderboard/submit', {
+    config: {
+      rateLimit: {
+        max: 5, // Strictly limit to 5 submissions
+        timeWindow: '1 minute' // per IP address per minute
+      }
+    },
     schema: {
       description: 'Submit a new score to the leaderboard',
       tags: ['Leaderboard'],

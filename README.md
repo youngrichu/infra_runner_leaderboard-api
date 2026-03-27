@@ -1,6 +1,6 @@
 # Leaderboard API
 
-A realtime leaderboard API for the Infrastructure Runner game, built with Fastify, Supabase, and Socket.IO.
+A realtime leaderboard API for the Infrastructure Runner game, built with Fastify, Neon (PostgreSQL), and Socket.IO.
 
 ## Features
 
@@ -10,11 +10,12 @@ A realtime leaderboard API for the Infrastructure Runner game, built with Fastif
 - **Player Statistics**: Track individual player progress
 - **Game Analytics**: Comprehensive game statistics and metrics
 - **API Documentation**: Auto-generated Swagger documentation
+- **Rate Limiting**: Strict rate limiting to prevent score spam
 
 ## Tech Stack
 
 - **Framework**: Fastify
-- **Database**: Supabase (PostgreSQL)
+- **Database**: Neon (Serverless PostgreSQL)
 - **Realtime**: Socket.IO
 - **Validation**: Joi
 - **Documentation**: Swagger/OpenAPI
@@ -25,7 +26,7 @@ A realtime leaderboard API for the Infrastructure Runner game, built with Fastif
 
 - Node.js 18+
 - pnpm
-- Supabase account and project
+- Neon account and project
 
 ### Installation
 
@@ -44,18 +45,16 @@ pnpm install
 cp .env.example .env
 ```
 
-4. Configure your `.env` file with Supabase credentials:
+4. Configure your `.env` file with Neon database connection:
 ```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_KEY=your_supabase_service_key
+DATABASE_URL=your_neon_postgresql_connection_string
+FRONTEND_URL=https://your-game.onrender.com,http://localhost:3000
 PORT=3001
-NODE_ENV=development
 ```
 
 5. Set up the database schema:
-   - Log into your Supabase dashboard
-   - Go to SQL Editor
+   - Log into your Neon dashboard
+   - Go to the SQL Editor
    - Run the SQL script from `database/schema.sql`
 
 ### Development
@@ -162,9 +161,8 @@ CREATE TABLE leaderboard (
 
 Ensure all environment variables are set in your production environment:
 
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_KEY`
+- `DATABASE_URL`
+- `FRONTEND_URL` (Important for CORS)
 - `PORT`
 - `NODE_ENV`
 
@@ -198,10 +196,9 @@ pnpm test
 ## Security
 
 - Input validation using Joi
-- Rate limiting enabled
-- CORS configured
+- Strict Rate limiting enabled to prevent spam
+- CORS configured to only allow requests from specific frontend domains
 - Helmet for security headers
-- Row Level Security (RLS) enabled in Supabase
 
 ## License
 
