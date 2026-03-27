@@ -46,5 +46,4 @@ SELECT
     water_drops_collected,
     energy_cells_collected,
     played_at
-FROM leaderboard
-ORDER BY score DESC;
+FROM leaderboard;
