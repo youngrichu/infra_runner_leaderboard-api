@@ -1,6 +1,6 @@
 # Leaderboard API
 
-A realtime leaderboard API for the Infrastructure Runner game, built with Fastify, Supabase, and Socket.IO.
+A realtime leaderboard API for the Infrastructure Runner game, built with Fastify, Neon, and Socket.IO.
 
 ## Features
 
@@ -14,7 +14,7 @@ A realtime leaderboard API for the Infrastructure Runner game, built with Fastif
 ## Tech Stack
 
 - **Framework**: Fastify
-- **Database**: Supabase (PostgreSQL)
+- **Database**: Neon (Serverless PostgreSQL)
 - **Realtime**: Socket.IO
 - **Validation**: Joi
 - **Documentation**: Swagger/OpenAPI
@@ -25,7 +25,7 @@ A realtime leaderboard API for the Infrastructure Runner game, built with Fastif
 
 - Node.js 18+
 - pnpm
-- Supabase account and project
+- Neon account and project
 
 ### Installation
 
@@ -44,17 +44,15 @@ pnpm install
 cp .env.example .env
 ```
 
-4. Configure your `.env` file with Supabase credentials:
+4. Configure your `.env` file with Neon credentials:
 ```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_KEY=your_supabase_service_key
+DATABASE_URL=postgresql://user:password@hostname.neon.tech/dbname?sslmode=require
 PORT=3001
 NODE_ENV=development
 ```
 
 5. Set up the database schema:
-   - Log into your Supabase dashboard
+   - Log into your Neon dashboard
    - Go to SQL Editor
    - Run the SQL script from `database/schema.sql`
 
@@ -141,18 +139,18 @@ The API uses a PostgreSQL database with the following main table:
 
 ```sql
 CREATE TABLE leaderboard (
-    id UUID PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     player_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     organization_name VARCHAR(255) NOT NULL,
-    score INTEGER NOT NULL,
-    game_duration INTEGER NOT NULL,
-    blueprints_collected INTEGER NOT NULL,
-    water_drops_collected INTEGER NOT NULL,
-    energy_cells_collected INTEGER NOT NULL,
-    played_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE,
-    updated_at TIMESTAMP WITH TIME ZONE
+    score INTEGER NOT NULL DEFAULT 0,
+    game_duration INTEGER NOT NULL DEFAULT 0,
+    blueprints_collected INTEGER NOT NULL DEFAULT 0,
+    water_drops_collected INTEGER NOT NULL DEFAULT 0,
+    energy_cells_collected INTEGER NOT NULL DEFAULT 0,
+    played_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
@@ -162,9 +160,7 @@ CREATE TABLE leaderboard (
 
 Ensure all environment variables are set in your production environment:
 
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_KEY`
+- `DATABASE_URL`
 - `PORT`
 - `NODE_ENV`
 
@@ -201,7 +197,6 @@ pnpm test
 - Rate limiting enabled
 - CORS configured
 - Helmet for security headers
-- Row Level Security (RLS) enabled in Supabase
 
 ## License
 
