@@ -1,4 +1,4 @@
--- Neon Database Schema for Leaderboard
+-- Database Schema for Leaderboard (Neon PostgreSQL)
 
 CREATE TABLE leaderboard (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -35,7 +35,7 @@ CREATE TRIGGER update_leaderboard_updated_at BEFORE UPDATE
 ON leaderboard FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Create a view for public leaderboard (without email)
-CREATE VIEW public_leaderboard AS
+CREATE OR REPLACE VIEW public_leaderboard AS
 SELECT 
     id,
     player_name,

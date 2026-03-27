@@ -5,15 +5,22 @@ require('dotenv').config();
 // Setup Socket.IO variable to be accessible in routes
 let io;
 
+// Define allowed origins for CORS
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',')
+  : ['http://localhost:3000', 'http://localhost:5173', 'https://infra-runner.onrender.com', 'https://infra-runner-game.vercel.app'];
+
 // Register plugins
 fastify.register(require('@fastify/cors'), {
-  origin: true
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'OPTIONS'],
 });
 
 fastify.register(require('@fastify/helmet'));
 
 fastify.register(require('@fastify/rate-limit'), {
-  max: 100,
+  global: true,
+  max: 100, // global rate limit
   timeWindow: '1 minute'
 });
 
@@ -62,7 +69,7 @@ const start = async () => {
     // Setup Socket.IO after server starts
     io = new Server(fastify.server, {
       cors: {
-        origin: "*",
+        origin: allowedOrigins,
         methods: ["GET", "POST"]
       }
     });

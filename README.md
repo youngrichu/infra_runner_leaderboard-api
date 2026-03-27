@@ -1,6 +1,6 @@
 # Leaderboard API
 
-A realtime leaderboard API for the Infrastructure Runner game, built with Fastify, Neon, and Socket.IO.
+A realtime leaderboard API for the Infrastructure Runner game, built with Fastify, Neon (PostgreSQL), and Socket.IO.
 
 ## Features
 
@@ -10,6 +10,7 @@ A realtime leaderboard API for the Infrastructure Runner game, built with Fastif
 - **Player Statistics**: Track individual player progress
 - **Game Analytics**: Comprehensive game statistics and metrics
 - **API Documentation**: Auto-generated Swagger documentation
+- **Rate Limiting**: Strict rate limiting to prevent score spam
 
 ## Tech Stack
 
@@ -44,16 +45,16 @@ pnpm install
 cp .env.example .env
 ```
 
-4. Configure your `.env` file with Neon credentials:
+4. Configure your `.env` file with Neon database connection:
 ```env
-DATABASE_URL=postgresql://user:password@hostname.neon.tech/dbname?sslmode=require
+DATABASE_URL=your_neon_postgresql_connection_string
+FRONTEND_URL=https://your-game.onrender.com,http://localhost:3000
 PORT=3001
-NODE_ENV=development
 ```
 
 5. Set up the database schema:
    - Log into your Neon dashboard
-   - Go to SQL Editor
+   - Go to the SQL Editor
    - Run the SQL script from `database/schema.sql`
 
 ### Development
@@ -139,18 +140,18 @@ The API uses a PostgreSQL database with the following main table:
 
 ```sql
 CREATE TABLE leaderboard (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id UUID PRIMARY KEY,
     player_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     organization_name VARCHAR(255) NOT NULL,
-    score INTEGER NOT NULL DEFAULT 0,
-    game_duration INTEGER NOT NULL DEFAULT 0,
-    blueprints_collected INTEGER NOT NULL DEFAULT 0,
-    water_drops_collected INTEGER NOT NULL DEFAULT 0,
-    energy_cells_collected INTEGER NOT NULL DEFAULT 0,
-    played_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    score INTEGER NOT NULL,
+    game_duration INTEGER NOT NULL,
+    blueprints_collected INTEGER NOT NULL,
+    water_drops_collected INTEGER NOT NULL,
+    energy_cells_collected INTEGER NOT NULL,
+    played_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE
 );
 ```
 
@@ -161,6 +162,7 @@ CREATE TABLE leaderboard (
 Ensure all environment variables are set in your production environment:
 
 - `DATABASE_URL`
+- `FRONTEND_URL` (Important for CORS)
 - `PORT`
 - `NODE_ENV`
 
@@ -194,8 +196,8 @@ pnpm test
 ## Security
 
 - Input validation using Joi
-- Rate limiting enabled
-- CORS configured
+- Strict Rate limiting enabled to prevent spam
+- CORS configured to only allow requests from specific frontend domains
 - Helmet for security headers
 
 ## License
