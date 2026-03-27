@@ -14,7 +14,7 @@ if (process.env.FRONTEND_URL) {
   allowedOrigins = process.env.FRONTEND_URL.split(',');
   console.log('CORS: Using origins from FRONTEND_URL environment variable.');
 } else {
-  const defaultOrigins = ['http://localhost:3000', 'http://localhost:5173', 'https://infra-runner.onrender.com', 'https://infra-runner-game.vercel.app'];
+  const defaultOrigins = ['http://localhost:3000', 'http://localhost:5173', 'https://infra-runner.onrender.com', 'https://infra-runner.netlify.app'];
   if (isProduction) {
     console.error('CRITICAL CONFIGURATION WARNING: FRONTEND_URL environment variable is NOT set in production.');
     console.warn('Falling back to default staging/development origins. This may cause CORS issues for your production game.');
@@ -26,8 +26,17 @@ if (process.env.FRONTEND_URL) {
 
 // Register plugins
 fastify.register(require('@fastify/cors'), {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., server-to-server, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: Origin '${origin}' is not allowed`), false);
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 });
 
 fastify.register(require('@fastify/helmet'));
