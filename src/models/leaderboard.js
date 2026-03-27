@@ -10,6 +10,19 @@ class LeaderboardModel {
     }
   }
 
+  async testConnection() {
+    if (!this.sql) {
+      throw new Error('DATABASE_URL is not set. Check your environment variables.');
+    }
+    try {
+      await this.sql`SELECT 1`;
+      return true;
+    } catch (err) {
+      console.error('Database connection test failed:', err.message);
+      throw err;
+    }
+  }
+
   async submitScore(data) {
     if (!this.sql) throw new Error('Database connection not initialized');
 

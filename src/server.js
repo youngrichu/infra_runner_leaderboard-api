@@ -1,5 +1,6 @@
 const fastify = require('fastify')({ logger: true });
 const { Server } = require('socket.io');
+const LeaderboardModel = require('./models/leaderboard');
 require('dotenv').config();
 
 // Setup Socket.IO variable to be accessible in routes
@@ -11,13 +12,16 @@ const isProduction = process.env.NODE_ENV === 'production';
 let allowedOrigins;
 if (process.env.FRONTEND_URL) {
   allowedOrigins = process.env.FRONTEND_URL.split(',');
+  console.log('CORS: Using origins from FRONTEND_URL environment variable.');
 } else {
+  const defaultOrigins = ['http://localhost:3000', 'http://localhost:5173', 'https://infra-runner.onrender.com', 'https://infra-runner-game.vercel.app'];
   if (isProduction) {
-    console.error('ERROR: FRONTEND_URL environment variable must be set in production');
-    process.exit(1);
+    console.error('CRITICAL CONFIGURATION WARNING: FRONTEND_URL environment variable is NOT set in production.');
+    console.warn('Falling back to default staging/development origins. This may cause CORS issues for your production game.');
+  } else {
+    console.warn('WARNING: FRONTEND_URL is not set. Defaulting to standard development origins.');
   }
-  console.warn('WARNING: FRONTEND_URL is not set. Defaulting to standard development origins.');
-  allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'https://infra-runner.onrender.com', 'https://infra-runner-game.vercel.app'];
+  allowedOrigins = defaultOrigins;
 }
 
 // Register plugins
@@ -73,9 +77,17 @@ fastify.register(require('./routes/health'));
 // Start server
 const start = async () => {
   try {
+    console.log('Step 1/3: Verifying Database Connection...');
+    const model = new LeaderboardModel();
+    await model.testConnection();
+    console.log('✓ Database Connection Verified');
+
+    console.log('Step 2/3: Starting Fastify Server...');
     const port = process.env.PORT || 3001;
     await fastify.listen({ port, host: '0.0.0.0' });
+    console.log(`✓ Fastify listening on port ${port}`);
     
+    console.log('Step 3/3: Initializing Socket.IO...');
     // Setup Socket.IO after server starts
     io = new Server(fastify.server, {
       cors: {
@@ -93,8 +105,15 @@ const start = async () => {
       });
     });
 
-    console.log(`Server listening on port ${port}`);
+    console.log('✓ Socket.IO Initialized');
+    console.log(`🚀 Leaderboard API is ready and running on port ${port}`);
   } catch (err) {
+    console.error('FATAL ERROR DURING STARTUP:');
+    if (err.message.includes('DATABASE_URL')) {
+      console.error('  → Missing DATABASE_URL! Please set it in your environment variables.');
+    } else {
+      console.error('  →', err.message);
+    }
     fastify.log.error(err);
     process.exit(1);
   }
