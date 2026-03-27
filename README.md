@@ -48,7 +48,7 @@ cp .env.example .env
 4. Configure your `.env` file with Neon database connection:
 ```env
 DATABASE_URL=your_neon_postgresql_connection_string
-FRONTEND_URL=https://your-game.onrender.com,http://localhost:3000
+FRONTEND_URL=https://infra-runner.netlify.app,http://localhost:3000
 PORT=3001
 ```
 
